@@ -213,90 +213,215 @@
   </div>
 
    <script>
-    const SALES_KEY = 'salesData';
-    const BIN_KEY = 'recycleBinData';
+   const SALES_KEY = 'salesData';
+const BIN_KEY = 'recycleBinData';
+let salesData = [];
+let recycleBinData = [];
+let sortState = { key: 'dateSold', asc: true };
 
-    let salesData = [];
-    let recycleBinData = [];
-    let sortState = { key: 'dateSold', asc: true };
+const salesTableBody = document.querySelector('#salesTable tbody');
+const recycleBinList = document.getElementById('recycleBinList');
+const totalDisplay = document.getElementById('totalDisplay');
 
-    const salesTableBody = document.querySelector('#salesTable tbody');
-    const recycleBinList = document.getElementById('recycleBinList');
-    const totalDisplay = document.getElementById('totalDisplay');
+function saveToLocalStorage() {
+  localStorage.setItem(SALES_KEY, JSON.stringify(salesData));
+  localStorage.setItem(BIN_KEY, JSON.stringify(recycleBinData));
+}
 
-    document.getElementById('price').addEventListener('input', updateTotal);
-    document.getElementById('quantity').addEventListener('input', updateTotal);
-    function updateTotal() {
-      const price = parseFloat(document.getElementById('price').value);
-      const quantity = parseInt(document.getElementById('quantity').value);
-      const total = (!isNaN(price) && !isNaN(quantity)) ? (price * quantity).toFixed(2) : '';
-      document.getElementById('totalPrice').value = total;
+function loadFromLocalStorage() {
+  salesData = JSON.parse(localStorage.getItem(SALES_KEY) || '[]');
+  recycleBinData = JSON.parse(localStorage.getItem(BIN_KEY) || '[]');
+}
+
+function updateTotal() {
+  const price = parseFloat(document.getElementById('price').value);
+  const quantity = parseInt(document.getElementById('quantity').value);
+  const total = (!isNaN(price) && !isNaN(quantity)) ? (price * quantity).toFixed(2) : '';
+  document.getElementById('totalPrice').value = total;
+}
+
+document.getElementById('price').addEventListener('input', updateTotal);
+document.getElementById('quantity').addEventListener('input', updateTotal);
+
+document.getElementById('salesForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const form = e.target;
+  const quantity = Number(form.quantity.value);
+  const price = Number(form.price.value);
+  const sale = {
+    dateSold: form.dateSold.value,
+    orderNumber: form.orderNumber.value.trim(),
+    itemName: form.itemName.value.trim(),
+    quantity,
+    price,
+    totalPrice: quantity * price,
+    soldBy: form.soldBy.value.trim(),
+    platform: form.platform.value.trim(),
+    customerName: form.customerName.value.trim(),
+    contact: form.contact.value.trim(),
+    paymentMethod: form.paymentMethod.value.trim(),
+    notes: form.notes.value.trim()
+  };
+  salesData.push(sale);
+  saveToLocalStorage();
+  loadData();
+  form.reset();
+  updateTotal();
+});
+
+function renderSalesTable() {
+  salesTableBody.innerHTML = '';
+  let filtered = [...salesData];
+  const from = document.getElementById('fromDate').value;
+  const to = document.getElementById('toDate').value;
+
+  if (from) filtered = filtered.filter(i => i.dateSold >= from);
+  if (to) filtered = filtered.filter(i => i.dateSold <= to);
+
+  filtered.sort((a, b) => {
+    let valA = a[sortState.key], valB = b[sortState.key];
+    if (["price", "quantity"].includes(sortState.key)) {
+      valA = Number(valA); valB = Number(valB);
     }
+    return sortState.asc ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+  });
 
-    function saveToLocalStorage() {
-      localStorage.setItem(SALES_KEY, JSON.stringify(salesData));
-      localStorage.setItem(BIN_KEY, JSON.stringify(recycleBinData));
+  filtered.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.dateSold}</td>
+      <td>${item.orderNumber}</td>
+      <td>${item.itemName}</td>
+      <td>${item.quantity}</td>
+      <td>R${item.price.toFixed(2)}</td>
+      <td>R${item.totalPrice.toFixed(2)}</td>
+      <td>${item.soldBy}</td>
+      <td>${item.platform}</td>
+      <td>${item.customerName}</td>
+      <td>${item.contact}</td>
+      <td>${item.paymentMethod}</td>
+      <td>${item.notes}</td>
+      <td><button onclick="deleteSale(${index})">Delete</button></td>`;
+    salesTableBody.appendChild(tr);
+  });
+}
+
+function renderRecycleBin() {
+  recycleBinList.innerHTML = recycleBinData.length === 0 ? 'Recycle bin is empty.' : '';
+  recycleBinData.forEach((item, index) => {
+    const div = document.createElement('div');
+    div.innerHTML = `${item.dateSold} - ${item.itemName} - R${item.totalPrice.toFixed(2)} `;
+    const restoreBtn = document.createElement('button');
+    restoreBtn.textContent = 'Restore';
+    restoreBtn.onclick = () => restoreSale(index);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.style.backgroundColor = '#c0392b';
+    deleteBtn.onclick = () => deleteRecycleBinSale(index);
+    div.appendChild(restoreBtn);
+    div.appendChild(deleteBtn);
+    recycleBinList.appendChild(div);
+  });
+}
+
+function calculateTotal() {
+  const from = document.getElementById('fromDate').value;
+  const to = document.getElementById('toDate').value;
+  const total = salesData.reduce((sum, item) => {
+    if ((!from || item.dateSold >= from) && (!to || item.dateSold <= to)) {
+      return sum + Number(item.totalPrice);
     }
+    return sum;
+  }, 0);
+  totalDisplay.textContent = `Total Sales (ZAR): R${total.toFixed(2)}`;
+}
 
-    function loadFromLocalStorage() {
-      salesData = JSON.parse(localStorage.getItem(SALES_KEY) || '[]');
-      recycleBinData = JSON.parse(localStorage.getItem(BIN_KEY) || '[]');
+function deleteSale(index) {
+  if (!confirm("Are you sure you want to delete this sale?")) return;
+  recycleBinData.push(salesData.splice(index, 1)[0]);
+  saveToLocalStorage();
+  loadData();
+}
+
+function restoreSale(index) {
+  salesData.push(recycleBinData.splice(index, 1)[0]);
+  saveToLocalStorage();
+  loadData();
+}
+
+function deleteRecycleBinSale(index) {
+  if (confirm("Permanently delete this record?")) {
+    recycleBinData.splice(index, 1);
+    saveToLocalStorage();
+    loadData();
+  }
+}
+
+function downloadExcel() {
+  const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
+  if (!fileName) return;
+
+  const from = document.getElementById('fromDate').value;
+  const to = document.getElementById('toDate').value;
+  const filtered = salesData.filter(item =>
+    (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
+  );
+
+  const worksheet = XLSX.utils.json_to_sheet(filtered);
+
+  // Apply basic styling
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell_address = XLSX.utils.encode_cell({r:R, c:C});
+      if (!worksheet[cell_address]) continue;
+      worksheet[cell_address].s = {
+        border: {
+          top: {style: "thin"},
+          bottom: {style: "thin"},
+          left: {style: "thin"},
+          right: {style: "thin"}
+        },
+        font: R === 0 ? {bold: true, sz: 14} : {sz: 12}
+      };
     }
+  }
 
-    async function loadData() {
-      loadFromLocalStorage();
-      renderSalesTable();
-      renderRecycleBin();
-      calculateTotal();
-    }
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+}
 
-    function downloadExcel() {
-      const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
-      if (!fileName) return;
-      const from = document.getElementById('fromDate').value;
-      const to = document.getElementById('toDate').value;
-      const filtered = salesData.filter(item =>
-        (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
-      );
-      const exportData = filtered.map(item => ({
-        'Date Sold': item.dateSold,
-        'Order Number': item.orderNumber,
-        'Item Name': item.itemName,
-        'Quantity': item.quantity,
-        'Sold By': item.soldBy,
-        'Platform': item.platform,
-        'Customer Name': item.customerName,
-        'Contact': item.contact,
-        'Price (ZAR)': item.price,
-        'Total Price (ZAR)': (item.quantity * item.price).toFixed(2),
-        'Payment Method': item.paymentMethod,
-        'Notes': item.notes
-      }));
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+document.querySelectorAll('#salesTable th[data-key]').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.getAttribute('data-key');
+    if (sortState.key === key) sortState.asc = !sortState.asc;
+    else { sortState.key = key; sortState.asc = true; }
+    document.querySelectorAll('#salesTable th[data-key]').forEach(header =>
+      header.textContent = header.textContent.replace(/[\u25B2\u25BC]/g, ''));
+    th.textContent += sortState.asc ? ' ▼' : ' ▲';
+    renderSalesTable();
+  });
+});
 
-      const range = XLSX.utils.decode_range(worksheet['!ref']);
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const cell_address = { c: C, r: R };
-          const cell_ref = XLSX.utils.encode_cell(cell_address);
-          if (!worksheet[cell_ref]) continue;
-          worksheet[cell_ref].s = {
-            border: {
-              top: { style: "thin", color: { auto: 1 } },
-              bottom: { style: "thin", color: { auto: 1 } },
-              left: { style: "thin", color: { auto: 1 } },
-              right: { style: "thin", color: { auto: 1 } }
-            },
-            font: R === 0 ? { bold: true, sz: 13 } : { sz: 11 }
-          };
-        }
-      }
+document.getElementById('fromDate').addEventListener('change', () => {
+  renderSalesTable();
+  calculateTotal();
+});
 
-      worksheet['!cols'] = Object.keys(exportData[0]).map(() => ({ wch: 18 }));
-      XLSX.writeFile(workbook, `${fileName}.xlsx`);
-    }
+document.getElementById('toDate').addEventListener('change', () => {
+  renderSalesTable();
+  calculateTotal();
+});
+
+function loadData() {
+  loadFromLocalStorage();
+  renderSalesTable();
+  renderRecycleBin();
+  calculateTotal();
+}
+
+loadData()
   </script>
 </body>
 </html>
