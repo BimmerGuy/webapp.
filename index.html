@@ -1,215 +1,86 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🚀 Artisan Stock Sales Tracker</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/png" href="logo.png" />
-  <meta name="theme-color" content="#0f172a" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <title>🚀 Demo Stock Sales Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#007bff" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    :root {
-      --bg-color: #0f172a;
-      --text-color: #f1f5f9;
-      --table-bg: #1e293b;
-      --table-border: #334155;
-      --input-bg: #1e293b;
-      --form-bg: #1e293b;
-      --highlight: #38bdf8;
-    }
-    .light-mode {
-      --bg-color: #f1f5f9;
-      --text-color: #0f172a;
-      --table-bg: #ffffff;
-      --table-border: #ccc;
-      --input-bg: #ffffff;
-      --form-bg: #ffffff;
-      --highlight: #2563eb;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--bg-color);
-      color: var(--text-color);
-      margin: 0;
-      padding: 20px;
-      transition: all 0.3s ease;
-    }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    header img {
-      width: 50px;
-      height: 50px;
-    }
-    h1 {
-      color: var(--highlight);
-      font-size: 24px;
-    }
-    .theme-toggle {
-      background: none;
-      border: none;
-      color: var(--highlight);
-      cursor: pointer;
-      font-size: 18px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: var(--table-bg);
-    }
-    th, td {
-      padding: 12px;
-      border: 1px solid var(--table-border);
-      text-align: left;
-    }
-    th {
-      background-color: var(--bg-color);
-      color: #facc15;
-      cursor: pointer;
-    }
-    input, select, button {
-      padding: 10px;
-      margin: 6px 0;
-      width: 100%;
-      box-sizing: border-box;
-      border-radius: 6px;
-      border: 1px solid #475569;
-      background-color: var(--input-bg);
-      color: var(--text-color);
-      transition: background 0.3s ease;
-    }
-    .form-container, .filter-container {
-      background: var(--form-bg);
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      margin-bottom: 30px;
-    }
-    .submit-btn, .download-btn {
-      background-color: #3b82f6;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.3s ease;
-    }
-    .submit-btn:hover, .download-btn:hover {
-      background-color: #2563eb;
-    }
-    .clear-btn {
-      margin-top: 10px;
-      background-color: #ef4444;
-    }
-    .clear-btn:hover {
-      background-color: #dc2626;
-    }
-    .responsive-table-wrapper {
-      overflow-x: auto;
-      max-height: 400px;
-      background: var(--table-bg);
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    }
-    .total-sales {
-      font-size: 16px;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    .recycle-bin {
-      margin-top: 30px;
-      background: var(--form-bg);
-      padding: 20px;
-      border-radius: 8px;
-    }
-    .recycle-bin h2 {
-      color: #f87171;
-    }
-    .recycle-bin button {
-      margin-right: 10px;
-    }
-    #recycleList li {
-      padding: 6px;
-      border-bottom: 1px solid var(--table-border);
-    }
-    @media (max-width: 600px) {
-      table {
-        font-size: 14px;
-      }
-      .form-container, .filter-container {
-        padding: 15px;
-      }
-    }
+    body { font-family: sans-serif; margin: 0; padding: 0; background: #f9f9f9; color: #333; }
+    header { background: #343a40; color: #fff; padding: 1rem; text-align: center; }
+    header img { max-height: 50px; vertical-align: middle; }
+    header h1 { display: inline; margin-left: 1rem; font-size: 1.5rem; vertical-align: middle; }
+    .form-container, .filter-container, .responsive-table-wrapper, .recycle-bin-container { padding: 1rem; max-width: 1000px; margin: auto; }
+    form label { display: block; margin: 0.5rem 0; }
+    form input { width: 100%; padding: 0.5rem; }
+    .submit-btn, .download-btn, .clear-btn, .restore-btn, .delete-btn { margin: 0.5rem 0.25rem; padding: 0.5rem 1rem; cursor: pointer; }
+    .total-sales { margin-top: 1rem; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+    th { background: #007bff; color: white; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
+    tr:nth-child(even) { background: #f2f2f2; }
   </style>
 </head>
 <body>
   <header>
     <img src="logo.png" alt="Logo">
-    <h1><i class="bi bi-graph-up"></i> Artisan Stock Sales Tracker</h1>
-    <button class="theme-toggle" onclick="document.body.classList.toggle('light-mode')">
-      <i class="bi bi-brightness-high"></i> Toggle Theme
-    </button>
+    <h1><i class="bi bi-graph-up"></i> Demo Stock Sales Tracker</h1>
   </header>
 
   <div class="form-container">
     <form id="salesForm">
-      <label>Order Number: <input type="text" id="orderNumber" required /></label>
-      <label>Item Name: <input type="text" id="itemName" required /></label>
-      <label>Quantity: <input type="number" id="quantity" value="1" min="1" required /></label>
-      <label>Date Sold: <input type="date" id="dateSold" required /></label>
-      <label>Sold By: <input type="text" id="soldBy" required /></label>
-      <label>Platform: <input type="text" id="platform" required /></label>
-      <label>Customer Name: <input type="text" id="customerName" /></label>
-      <label>Contact: <input type="text" id="contact" /></label>
-      <label>Price (ZAR): <input type="number" id="price" required /></label>
-      <label>Total Price (ZAR): <input type="number" id="totalPrice" readonly /></label>
-      <label>Payment Method: <input type="text" id="paymentMethod" /></label>
-      <label>Notes: <input type="text" id="notes" /></label>
-      <button type="submit" class="submit-btn">Add Entry</button>
+      <label>Date Sold: <input type="date" name="dateSold" required></label>
+      <label>Order Number: <input type="text" name="orderNumber" required></label>
+      <label>Item Name: <input type="text" name="itemName" required></label>
+      <label>Quantity: <input type="number" name="quantity" id="quantity" required></label>
+      <label>Unit Price: <input type="number" step="0.01" name="price" id="price" required></label>
+      <label>Total Price: <input type="text" id="totalPrice" disabled></label>
+      <label>Sold By: <input type="text" name="soldBy"></label>
+      <label>Platform: <input type="text" name="platform"></label>
+      <label>Customer Name: <input type="text" name="customerName"></label>
+      <label>Contact: <input type="text" name="contact"></label>
+      <label>Payment Method: <input type="text" name="paymentMethod"></label>
+      <label>Notes: <input type="text" name="notes"></label>
+      <button class="submit-btn" type="submit">Add Sale</button>
     </form>
   </div>
 
   <div class="filter-container">
-    <label>From Date: <input type="date" id="fromDate" /></label>
-    <label>To Date: <input type="date" id="toDate" /></label>
-    <button class="download-btn" onclick="downloadExcel()">Download Sales Report</button>
-    <button class="clear-btn" onclick="clearAllData()">Clear All Data</button>
-    <button class="download-btn" onclick="calculateTotal()">Show Total Sales (ZAR)</button>
-    <div class="total-sales" id="totalDisplay"></div>
+    <label>From: <input type="date" id="fromDate"></label>
+    <label>To: <input type="date" id="toDate"></label>
+    <button class="download-btn" onclick="downloadExcel()">Download Excel</button>
   </div>
 
   <div class="responsive-table-wrapper">
     <table id="salesTable">
       <thead>
         <tr>
-          <th data-key="dateSold">Date Sold ▼</th>
-          <th data-key="orderNumber">Order Number</th>
-          <th data-key="itemName">Item Name</th>
-          <th data-key="quantity">Quantity</th>
-          <th data-key="soldBy">Sold By</th>
-          <th data-key="platform">Platform</th>
-          <th data-key="customerName">Customer Name</th>
-          <th data-key="contact">Contact</th>
-          <th data-key="price">Price (ZAR) ▼</th>
-          <th data-key="paymentMethod">Payment Method</th>
-          <th data-key="notes">Notes</th>
-          <th>Actions</th>
+          <th data-key="dateSold">Date</th>
+          <th data-key="orderNumber">Order</th>
+          <th data-key="itemName">Item</th>
+          <th data-key="quantity">Qty</th>
+          <th data-key="price">Unit Price</th>
+          <th>Total</th>
+          <th>Sold By</th>
+          <th>Platform</th>
+          <th>Customer</th>
+          <th>Contact</th>
+          <th>Payment</th>
+          <th>Notes</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
+    <div class="total-sales" id="totalDisplay"></div>
   </div>
-  <div class="recycle-bin">
-    <h2>Recycle Bin</h2>
-    <button onclick="restoreAll()">Restore All</button>
-    <button onclick="deleteAllRecycleBin()">Delete All Permanently</button>
-    <div id="recycleBinList">Recycle bin is empty.</div>
+
+  <div class="recycle-bin-container">
+    <h3>Recycle Bin</h3>
+    <div id="recycleBinList"></div>
   </div>
 
    <script>
