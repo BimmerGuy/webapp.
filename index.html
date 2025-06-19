@@ -105,6 +105,7 @@
       <label>Price (ZAR): <input type="number" id="price" required /></label><br />
       <label>Payment Method: <input type="text" id="paymentMethod" /></label><br />
       <label>Notes: <input type="text" id="notes" /></label><br />
+      <label>Total Sales: <input type="text" id="runningTotal" readonly value="R0.00" /></label><br />
       <button type="submit" class="submit-btn">Add Entry</button>
     </form>
   </div>
@@ -139,6 +140,8 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
+    let runningTotal = 0;
+
     document.getElementById('salesForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const table = document.querySelector('#salesTable tbody');
@@ -147,12 +150,16 @@
         'orderNumber', 'itemName', 'dateSold', 'soldBy', 'platform',
         'customerName', 'contact', 'price', 'paymentMethod', 'notes'
       ];
-      data.forEach(id => {
+      let entryTotal = 0;
+      data.forEach((id, index) => {
         const cell = row.insertCell();
         const value = document.getElementById(id).value;
         cell.textContent = value;
+        if (id === 'price') entryTotal = parseFloat(value) || 0;
         document.getElementById(id).value = '';
       });
+      runningTotal += entryTotal;
+      document.getElementById('runningTotal').value = `R${runningTotal.toFixed(2)}`;
     });
 
     function downloadExcel() {
@@ -162,14 +169,19 @@
       const data = [
         ["Order Number", "Item Name", "Date Sold", "Sold By", "Platform", "Customer Name", "Contact", "Price (ZAR)", "Payment Method", "Notes"]
       ];
+      let total = 0;
 
       rows.forEach(row => {
         const cells = row.querySelectorAll('td');
         const date = cells[2].textContent;
+        const price = parseFloat(cells[7].textContent) || 0;
         if ((!from || date >= from) && (!to || date <= to)) {
+          total += price;
           data.push(Array.from(cells).map(cell => cell.textContent));
         }
       });
+
+      data.push(["", "", "", "", "", "", "", `TOTAL: R${total.toFixed(2)}`, "", ""]);
 
       const reportName = prompt("Enter Sales Report File Name:", "Sales Report");
       if (!reportName) return;
