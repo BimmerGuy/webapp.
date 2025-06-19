@@ -253,7 +253,7 @@
 
       filtered.sort((a, b) => {
         let valA = a[sortState.key], valB = b[sortState.key];
-        if (['price', 'quantity'].includes(sortState.key)) {
+        if (["price", "quantity"].includes(sortState.key)) {
           valA = Number(valA); valB = Number(valB);
         }
         return sortState.asc ? valA > valB ? 1 : -1 : valA < valB ? 1 : -1;
@@ -378,21 +378,22 @@
     }
 
     function downloadExcel() {
-  const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
-  if (!fileName) return; // user canceled or left blank
+      const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
+      if (!fileName) return;
 
-  const from = document.getElementById('fromDate').value;
-  const to = document.getElementById('toDate').value;
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
 
-  const filtered = salesData.filter(item =>
-    (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
-  );
+      const filtered = salesData.filter(item =>
+        (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
+      );
 
-  const worksheet = XLSX.utils.json_to_sheet(filtered);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
-  XLSX.writeFile(workbook, `${fileName}.xlsx`);
-}
+      const worksheet = XLSX.utils.json_to_sheet(filtered);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+      XLSX.writeFile(workbook, `${fileName}.xlsx`);
+    }
+
     document.querySelectorAll('#salesTable th[data-key]').forEach(th => {
       th.addEventListener('click', () => {
         const key = th.getAttribute('data-key');
@@ -410,6 +411,10 @@
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js');
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
     }
 
     loadData();
