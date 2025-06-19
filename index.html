@@ -151,7 +151,7 @@
 <body>
   <header>
     <img src="logo.png" alt="Logo">
-    <h1><i class="bi bi-graph-up"></i> Demo Stock Sales Tracker</h1>
+    <h1><i class="bi bi-graph-up"></i> Artisan Stock Sales Tracker</h1>
     <button class="theme-toggle" onclick="document.body.classList.toggle('light-mode')">
       <i class="bi bi-brightness-high"></i> Toggle Theme
     </button>
@@ -378,16 +378,21 @@
     }
 
     function downloadExcel() {
-      const from = document.getElementById('fromDate').value;
-      const to = document.getElementById('toDate').value;
-      const filtered = salesData.filter(item =>
-        (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
-      );
-      const worksheet = XLSX.utils.json_to_sheet(filtered);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
-      XLSX.writeFile(workbook, `Sales_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
-    }
+  const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
+  if (!fileName) return; // user canceled or left blank
+
+  const from = document.getElementById('fromDate').value;
+  const to = document.getElementById('toDate').value;
+
+  const filtered = salesData.filter(item =>
+    (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
+  );
+
+  const worksheet = XLSX.utils.json_to_sheet(filtered);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+}
 
     document.querySelectorAll('#salesTable th[data-key]').forEach(th => {
       th.addEventListener('click', () => {
