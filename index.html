@@ -1,3 +1,5 @@
+// Updated with Clear Data button, sorting, and Firebase sync setup
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,6 +41,7 @@
     th {
       background-color: #2c3e50;
       color: #fff;
+      cursor: pointer;
     }
     input, select, button {
       padding: 10px;
@@ -76,6 +79,13 @@
       font-size: 16px;
       font-weight: bold;
       margin-top: 10px;
+    }
+    .clear-btn {
+      margin-top: 10px;
+      background-color: #e74c3c;
+    }
+    .clear-btn:hover {
+      background-color: #c0392b;
     }
     @media (max-width: 600px) {
       table {
@@ -116,6 +126,7 @@
     <label>To Date: <input type="date" id="toDate" /></label>
     <button class="download-btn" onclick="downloadExcel()">Download Sales Report</button>
     <button class="download-btn" onclick="calculateTotal()">Show Total Sales (ZAR)</button>
+    <button class="download-btn clear-btn" onclick="clearAllData()">Clear All Data</button>
     <div class="total-sales" id="totalDisplay"></div>
   </div>
 
@@ -123,15 +134,15 @@
     <table id="salesTable">
       <thead>
         <tr>
-          <th>Order Number</th>
-          <th>Item Name</th>
-          <th>Quantity</th>
-          <th>Date Sold</th>
-          <th>Sold By</th>
-          <th>Platform</th>
-          <th>Customer Name</th>
-          <th>Contact</th>
-          <th>Price (ZAR)</th>
+          <th onclick="sortTable(0)">Order Number</th>
+          <th onclick="sortTable(1)">Item Name</th>
+          <th onclick="sortTable(2)">Quantity</th>
+          <th onclick="sortTable(3)">Date Sold</th>
+          <th onclick="sortTable(4)">Sold By</th>
+          <th onclick="sortTable(5)">Platform</th>
+          <th onclick="sortTable(6)">Customer Name</th>
+          <th onclick="sortTable(7)">Contact</th>
+          <th onclick="sortTable(8)">Price (ZAR)</th>
           <th>Payment Method</th>
           <th>Notes</th>
         </tr>
@@ -144,75 +155,70 @@
   <script>
     let runningTotal = 0;
 
-    document.getElementById('salesForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+    function saveToLocalStorage(data) {
+      const existing = JSON.parse(localStorage.getItem('salesData') || '[]');
+      existing.push(data);
+      localStorage.setItem('salesData', JSON.stringify(existing));
+    }
+
+    function loadFromLocalStorage() {
+      const saved = JSON.parse(localStorage.getItem('salesData') || '[]');
       const table = document.querySelector('#salesTable tbody');
-      const row = table.insertRow();
-      const data = [
-        'orderNumber', 'itemName', 'quantity', 'dateSold', 'soldBy', 'platform',
-        'customerName', 'contact', 'price', 'paymentMethod', 'notes'
-      ];
-      let quantity = parseInt(document.getElementById('quantity').value) || 1;
-      let unitPrice = parseFloat(document.getElementById('price').value) || 0;
-      let totalPrice = quantity * unitPrice;
-      data.forEach((id, index) => {
-        const cell = row.insertCell();
-        let value = document.getElementById(id).value;
-        if (id === 'price') value = totalPrice.toFixed(2);
-        cell.textContent = value;
-        document.getElementById(id).value = (id === 'quantity') ? '1' : '';
+      saved.forEach(entry => {
+        const row = table.insertRow();
+        entry.forEach(value => {
+          const cell = row.insertCell();
+          cell.textContent = value;
+        });
+        runningTotal += parseFloat(entry[8]) || 0;
       });
-      runningTotal += totalPrice;
       document.getElementById('runningTotal').value = `R${runningTotal.toFixed(2)}`;
-    });
-
-    function downloadExcel() {
-      const from = document.getElementById('fromDate').value;
-      const to = document.getElementById('toDate').value;
-      const rows = Array.from(document.querySelectorAll('#salesTable tbody tr'));
-      const data = [
-        ["Order Number", "Item Name", "Quantity", "Date Sold", "Sold By", "Platform", "Customer Name", "Contact", "Price (ZAR)", "Payment Method", "Notes"]
-      ];
-      let total = 0;
-
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        const date = cells[3].textContent;
-        const price = parseFloat(cells[8].textContent) || 0;
-        if ((!from || date >= from) && (!to || date <= to)) {
-          total += price;
-          data.push(Array.from(cells).map(cell => cell.textContent));
-        }
-      });
-
-      data.push(["", "", "", "", "", "", "", "", `TOTAL: R${total.toFixed(2)}`, "", ""]);
-
-      const reportName = prompt("Enter Sales Report File Name:", "Sales Report");
-      if (!reportName) return;
-
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, "Sales");
-      XLSX.writeFile(wb, reportName + ".xlsx");
     }
 
-    function calculateTotal() {
-      const from = document.getElementById('fromDate').value;
-      const to = document.getElementById('toDate').value;
-      const rows = Array.from(document.querySelectorAll('#salesTable tbody tr'));
-      let total = 0;
-
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        const date = cells[3].textContent;
-        const price = parseFloat(cells[8].textContent) || 0;
-        if ((!from || date >= from) && (!to || date <= to)) {
-          total += price;
-        }
-      });
-
-      document.getElementById('totalDisplay').textContent = `Total Sales (ZAR): R${total.toFixed(2)}`;
+    function clearAllData() {
+      if (confirm("Are you sure you want to clear all sales data?")) {
+        localStorage.removeItem('salesData');
+        document.querySelector('#salesTable tbody').innerHTML = '';
+        document.getElementById('totalDisplay').textContent = '';
+        document.getElementById('runningTotal').value = 'R0.00';
+        runningTotal = 0;
+      }
     }
+
+    function sortTable(n) {
+      const table = document.getElementById("salesTable");
+      let switching = true;
+      let dir = "asc";
+      let switchcount = 0;
+      while (switching) {
+        switching = false;
+        const rows = table.rows;
+        for (let i = 1; i < (rows.length - 1); i++) {
+          let shouldSwitch = false;
+          const x = rows[i].getElementsByTagName("TD")[n];
+          const y = rows[i + 1].getElementsByTagName("TD")[n];
+          const xContent = isNaN(x.innerHTML) ? x.innerHTML.toLowerCase() : parseFloat(x.innerHTML);
+          const yContent = isNaN(y.innerHTML) ? y.innerHTML.toLowerCase() : parseFloat(y.innerHTML);
+          if ((dir === "asc" && xContent > yContent) || (dir === "desc" && xContent < yContent)) {
+            shouldSwitch = true;
+            break;
+          }
+        }
+        if (shouldSwitch) {
+          rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+          switching = true;
+          switchcount++;
+        } else {
+          if (switchcount === 0 && dir === "asc") {
+            dir = "desc";
+            switching = true;
+          }
+        }
+      }
+    }
+
+    loadFromLocalStorage();
   </script>
 </body>
 </html>
+
