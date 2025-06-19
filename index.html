@@ -168,6 +168,7 @@
       <label>Customer Name: <input type="text" id="customerName" /></label>
       <label>Contact: <input type="text" id="contact" /></label>
       <label>Price (ZAR): <input type="number" id="price" required /></label>
+      <label>Total Price (ZAR): <input type="number" id="totalPrice" readonly /></label>
       <label>Payment Method: <input type="text" id="paymentMethod" /></label>
       <label>Notes: <input type="text" id="notes" /></label>
       <button type="submit" class="submit-btn">Add Entry</button>
@@ -195,7 +196,7 @@
           <th data-key="platform">Platform</th>
           <th data-key="customerName">Customer Name</th>
           <th data-key="contact">Contact</th>
-          <th data-key="price">Price (ZAR)</th>
+          <th data-key="price">Price (ZAR) ▼</th>
           <th data-key="paymentMethod">Payment Method</th>
           <th data-key="notes">Notes</th>
           <th>Actions</th>
@@ -204,7 +205,6 @@
       <tbody></tbody>
     </table>
   </div>
-
   <div class="recycle-bin">
     <h2>Recycle Bin</h2>
     <button onclick="restoreAll()">Restore All</button>
@@ -240,6 +240,15 @@
       renderRecycleBin();
       calculateTotal();
     }
+        // total price auto-calculation
+    document.getElementById('price').addEventListener('input', updateTotal);
+    document.getElementById('quantity').addEventListener('input', updateTotal);
+    function updateTotal() {
+      const price = parseFloat(document.getElementById('price').value);
+      const quantity = parseInt(document.getElementById('quantity').value);
+      const total = (!isNaN(price) && !isNaN(quantity)) ? (price * quantity).toFixed(2) : '';
+      document.getElementById('totalPrice').value = total;
+    }
 
     function renderSalesTable() {
       salesTableBody.innerHTML = '';
@@ -253,7 +262,7 @@
 
       filtered.sort((a, b) => {
         let valA = a[sortState.key], valB = b[sortState.key];
-        if (["price", "quantity"].includes(sortState.key)) {
+        if (['price', 'quantity'].includes(sortState.key)) {
           valA = Number(valA); valB = Number(valB);
         }
         return sortState.asc ? valA > valB ? 1 : -1 : valA < valB ? 1 : -1;
@@ -378,22 +387,21 @@
     }
 
     function downloadExcel() {
-      const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
-      if (!fileName) return;
+  const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
+  if (!fileName) return; // user canceled or left blank
 
-      const from = document.getElementById('fromDate').value;
-      const to = document.getElementById('toDate').value;
+  const from = document.getElementById('fromDate').value;
+  const to = document.getElementById('toDate').value;
 
-      const filtered = salesData.filter(item =>
-        (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
-      );
+  const filtered = salesData.filter(item =>
+    (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
+  );
 
-      const worksheet = XLSX.utils.json_to_sheet(filtered);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
-      XLSX.writeFile(workbook, `${fileName}.xlsx`);
-    }
-
+  const worksheet = XLSX.utils.json_to_sheet(filtered);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+}
     document.querySelectorAll('#salesTable th[data-key]').forEach(th => {
       th.addEventListener('click', () => {
         const key = th.getAttribute('data-key');
@@ -411,10 +419,6 @@
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js');
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle('light-mode');
     }
 
     loadData();
