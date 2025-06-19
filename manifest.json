@@ -1,7 +1,7 @@
 {
-  "name": "Artisan Stock Sales Tracker",
-  "short_name": "Stock Tracker",
-  "start_url": ".",
+  "name": "Demo Stock Sales Tracker",
+  "short_name": "Sales Tracker",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#007bff",
@@ -18,3 +18,4 @@
     }
   ]
 }
+
