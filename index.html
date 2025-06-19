@@ -216,48 +216,7 @@
   <footer>
     &copy; <span id="year"></span> Auranest. All rights reserved.
   </footer>
- <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-
-    function downloadExcel() {
-      const fileName = prompt("Enter file name:", `Sales_Report_${new Date().toISOString().slice(0, 10)}`);
-      if (!fileName) return;
-      const table = document.querySelector("#salesTable tbody");
-      const headers = ["Date", "Order", "Item", "Qty", "Unit Price", "Total", "Sold By", "Platform", "Customer", "Contact", "Payment", "Notes"];
-      const data = [headers];
-      table.querySelectorAll("tr").forEach(row => {
-        const cells = Array.from(row.children).slice(0, -1).map((cell, i) => {
-          const txt = cell.textContent.trim();
-          return (i === 4 || i === 3 || i === 5) ? parseFloat(txt.replace("R", "")) || 0 : txt;
-        });
-        if (!isNaN(cells[3]) && !isNaN(cells[4])) {
-          cells[5] = (cells[3] * cells[4]).toFixed(2);
-        }
-        data.push(cells);
-      });
-
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!ws[cellRef]) continue;
-          ws[cellRef].s = {
-            font: { bold: R === 0, sz: R === 0 ? 14 : 12 },
-            border: {
-              top: { style: "thin", color: { auto: 1 } },
-              bottom: { style: "thin", color: { auto: 1 } },
-              left: { style: "thin", color: { auto: 1 } },
-              right: { style: "thin", color: { auto: 1 } },
-            }
-          };
-        }
-      }
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Sales');
-      XLSX.writeFile(wb, `${fileName}.xlsx`);
-    }
-  </script>
+ 
   
    <script>
     const SALES_KEY = 'salesData';
@@ -298,52 +257,80 @@
     }
 
     function downloadExcel() {
-      const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
-      if (!fileName) return;
-      const from = document.getElementById('fromDate').value;
-      const to = document.getElementById('toDate').value;
-      const filtered = salesData.filter(item =>
-        (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
-      );
-      const exportData = filtered.map(item => ({
-        'Date Sold': item.dateSold,
-        'Order Number': item.orderNumber,
-        'Item Name': item.itemName,
-        'Quantity': item.quantity,
-        'Sold By': item.soldBy,
-        'Platform': item.platform,
-        'Customer Name': item.customerName,
-        'Contact': item.contact,
-        'Price (ZAR)': item.price,
-        'Total Price (ZAR)': (item.quantity * item.price).toFixed(2),
-        'Payment Method': item.paymentMethod,
-        'Notes': item.notes
-      }));
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+  const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
+  if (!fileName) return;
 
-      const range = XLSX.utils.decode_range(worksheet['!ref']);
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const cell_address = { c: C, r: R };
-          const cell_ref = XLSX.utils.encode_cell(cell_address);
-          if (!worksheet[cell_ref]) continue;
-          worksheet[cell_ref].s = {
-            border: {
-              top: { style: "thin", color: { auto: 1 } },
-              bottom: { style: "thin", color: { auto: 1 } },
-              left: { style: "thin", color: { auto: 1 } },
-              right: { style: "thin", color: { auto: 1 } }
-            },
-            font: R === 0 ? { bold: true, sz: 13 } : { sz: 11 }
-          };
+  const from = document.getElementById('fromDate').value;
+  const to = document.getElementById('toDate').value;
+  const filtered = salesData.filter(item =>
+    (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
+  );
+
+  const exportData = filtered.map(item => ({
+    'Date Sold': item.dateSold,
+    'Order Number': item.orderNumber,
+    'Item Name': item.itemName,
+    'Quantity': item.quantity,
+    'Sold By': item.soldBy,
+    'Platform': item.platform,
+    'Customer Name': item.customerName,
+    'Contact': item.contact,
+    'Price (ZAR)': item.price,
+    'Total Price (ZAR)': (item.quantity * item.price).toFixed(2),
+    'Payment Method': item.paymentMethod,
+    'Notes': item.notes
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData, { origin: 'A2' });
+
+  // Add header row with bold text
+  const headers = Object.keys(exportData[0] || {});
+  headers.forEach((header, i) => {
+    const cellRef = XLSX.utils.encode_cell({ r: 1, c: i });
+    worksheet[cellRef] = {
+      t: 's',
+      v: header,
+      s: {
+        font: { bold: true, sz: 13 },
+        border: {
+          top: { style: "thin", color: { auto: 1 } },
+          bottom: { style: "thin", color: { auto: 1 } },
+          left: { style: "thin", color: { auto: 1 } },
+          right: { style: "thin", color: { auto: 1 } }
         }
       }
+    };
+  });
 
-      worksheet['!cols'] = Object.keys(exportData[0]).map(() => ({ wch: 18 }));
-      XLSX.writeFile(workbook, `${fileName}.xlsx`);
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell_address = { c: C, r: R };
+      const cell_ref = XLSX.utils.encode_cell(cell_address);
+      if (!worksheet[cell_ref]) continue;
+
+      // Apply borders and styling
+      worksheet[cell_ref].s = worksheet[cell_ref].s || {};
+      worksheet[cell_ref].s.border = {
+        top: { style: "thin", color: { auto: 1 } },
+        bottom: { style: "thin", color: { auto: 1 } },
+        left: { style: "thin", color: { auto: 1 } },
+        right: { style: "thin", color: { auto: 1 } }
+      };
+      worksheet[cell_ref].s.font = R === 1
+        ? { bold: true, sz: 13 }
+        : { sz: 11 };
     }
+  }
+
+  worksheet['!cols'] = headers.map(() => ({ wch: 18 }));
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+
+  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+}
+
      if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
         .then(() => console.log('Service Worker Registered'))
