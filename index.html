@@ -72,6 +72,11 @@
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
+    .total-sales {
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
     @media (max-width: 600px) {
       table {
         font-size: 14px;
@@ -107,7 +112,9 @@
   <div class="filter-container">
     <label>From Date: <input type="date" id="fromDate" /></label>
     <label>To Date: <input type="date" id="toDate" /></label>
-    <button class="download-btn" onclick="downloadExcel()">Download Excel</button>
+    <button class="download-btn" onclick="downloadExcel()">Download Sales Report</button>
+    <button class="download-btn" onclick="calculateTotal()">Show Total Sales (ZAR)</button>
+    <div class="total-sales" id="totalDisplay"></div>
   </div>
 
   <div class="responsive-table-wrapper">
@@ -171,6 +178,24 @@
       const ws = XLSX.utils.aoa_to_sheet(data);
       XLSX.utils.book_append_sheet(wb, ws, "Sales");
       XLSX.writeFile(wb, reportName + ".xlsx");
+    }
+
+    function calculateTotal() {
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
+      const rows = Array.from(document.querySelectorAll('#salesTable tbody tr'));
+      let total = 0;
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const date = cells[2].textContent;
+        const price = parseFloat(cells[7].textContent) || 0;
+        if ((!from || date >= from) && (!to || date <= to)) {
+          total += price;
+        }
+      });
+
+      document.getElementById('totalDisplay').textContent = `Total Sales (ZAR): R${total.toFixed(2)}`;
     }
   </script>
 </body>
