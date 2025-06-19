@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚀 Artisan Stock Sales Tracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="logo.png" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --text-color: #f1f5f9;
+      --table-bg: #1e293b;
+      --table-border: #334155;
+      --input-bg: #1e293b;
+      --form-bg: #1e293b;
+      --highlight: #38bdf8;
+    }
+    .light-mode {
+      --bg-color: #f1f5f9;
+      --text-color: #0f172a;
+      --table-bg: #ffffff;
+      --table-border: #ccc;
+      --input-bg: #ffffff;
+      --form-bg: #ffffff;
+      --highlight: #2563eb;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    header img {
+      width: 50px;
+      height: 50px;
+    }
+    h1 {
+      color: var(--highlight);
+      font-size: 24px;
+    }
+    .theme-toggle {
+      background: none;
+      border: none;
+      color: var(--highlight);
+      cursor: pointer;
+      font-size: 18px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: var(--table-bg);
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid var(--table-border);
+      text-align: left;
+    }
+    th {
+      background-color: var(--bg-color);
+      color: #facc15;
+      cursor: pointer;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 6px;
+      border: 1px solid #475569;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      transition: background 0.3s ease;
+    }
+    .form-container, .filter-container {
+      background: var(--form-bg);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      margin-bottom: 30px;
+    }
+    .submit-btn, .download-btn {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+    .submit-btn:hover, .download-btn:hover {
+      background-color: #2563eb;
+    }
+    .clear-btn {
+      margin-top: 10px;
+      background-color: #ef4444;
+    }
+    .clear-btn:hover {
+      background-color: #dc2626;
+    }
+    .responsive-table-wrapper {
+      overflow-x: auto;
+      max-height: 400px;
+      background: var(--table-bg);
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .total-sales {
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .recycle-bin {
+      margin-top: 30px;
+      background: var(--form-bg);
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .recycle-bin h2 {
+      color: #f87171;
+    }
+    .recycle-bin button {
+      margin-right: 10px;
+    }
+    #recycleList li {
+      padding: 6px;
+      border-bottom: 1px solid var(--table-border);
+    }
+    @media (max-width: 600px) {
+      table {
+        font-size: 14px;
+      }
+      .form-container, .filter-container {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="Logo">
+    <h1><i class="bi bi-graph-up"></i> Artisan Stock Sales Tracker</h1>
+    <button class="theme-toggle" onclick="document.body.classList.toggle('light-mode')">
+      <i class="bi bi-brightness-high"></i> Toggle Theme
+    </button>
+  </header>
+
+  <div class="form-container">
+    <form id="salesForm">
+      <label>Order Number: <input type="text" id="orderNumber" required /></label>
+      <label>Item Name: <input type="text" id="itemName" required /></label>
+      <label>Quantity: <input type="number" id="quantity" value="1" min="1" required /></label>
+      <label>Date Sold: <input type="date" id="dateSold" required /></label>
+      <label>Sold By: <input type="text" id="soldBy" required /></label>
+      <label>Platform: <input type="text" id="platform" required /></label>
+      <label>Customer Name: <input type="text" id="customerName" /></label>
+      <label>Contact: <input type="text" id="contact" /></label>
+      <label>Price (ZAR): <input type="number" id="price" required /></label>
+      <label>Payment Method: <input type="text" id="paymentMethod" /></label>
+      <label>Notes: <input type="text" id="notes" /></label>
+      <button type="submit" class="submit-btn">Add Entry</button>
+    </form>
+  </div>
+
+  <div class="filter-container">
+    <label>From Date: <input type="date" id="fromDate" /></label>
+    <label>To Date: <input type="date" id="toDate" /></label>
+    <button class="download-btn" onclick="downloadExcel()">Download Sales Report</button>
+    <button class="clear-btn" onclick="clearAllData()">Clear All Data</button>
+    <button class="download-btn" onclick="calculateTotal()">Show Total Sales (ZAR)</button>
+    <div class="total-sales" id="totalDisplay"></div>
+  </div>
+
+  <div class="responsive-table-wrapper">
+    <table id="salesTable">
+      <thead>
+        <tr>
+          <th data-key="dateSold">Date Sold ▼</th>
+          <th data-key="orderNumber">Order Number</th>
+          <th data-key="itemName">Item Name</th>
+          <th data-key="quantity">Quantity</th>
+          <th data-key="soldBy">Sold By</th>
+          <th data-key="platform">Platform</th>
+          <th data-key="customerName">Customer Name</th>
+          <th data-key="contact">Contact</th>
+          <th data-key="price">Price (ZAR)</th>
+          <th data-key="paymentMethod">Payment Method</th>
+          <th data-key="notes">Notes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="recycle-bin">
+    <h2>Recycle Bin</h2>
+    <button onclick="restoreAll()">Restore All</button>
+    <button onclick="deleteAllRecycleBin()">Delete All Permanently</button>
+    <div id="recycleBinList">Recycle bin is empty.</div>
+  </div>
+
+  <script>
+    const SALES_KEY = 'salesData';
+    const BIN_KEY = 'recycleBinData';
+
+    let salesData = [];
+    let recycleBinData = [];
+    let sortState = { key: 'dateSold', asc: true };
+
+    const salesTableBody = document.querySelector('#salesTable tbody');
+    const recycleBinList = document.getElementById('recycleBinList');
+    const totalDisplay = document.getElementById('totalDisplay');
+
+    function saveToLocalStorage() {
+      localStorage.setItem(SALES_KEY, JSON.stringify(salesData));
+      localStorage.setItem(BIN_KEY, JSON.stringify(recycleBinData));
+    }
+
+    function loadFromLocalStorage() {
+      salesData = JSON.parse(localStorage.getItem(SALES_KEY) || '[]');
+      recycleBinData = JSON.parse(localStorage.getItem(BIN_KEY) || '[]');
+    }
+
+    async function loadData() {
+      loadFromLocalStorage();
+      renderSalesTable();
+      renderRecycleBin();
+      calculateTotal();
+    }
+
+    function renderSalesTable() {
+      salesTableBody.innerHTML = '';
+      let filtered = [...salesData];
+
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
+
+      if (from) filtered = filtered.filter(item => item.dateSold >= from);
+      if (to) filtered = filtered.filter(item => item.dateSold <= to);
+
+      filtered.sort((a, b) => {
+        let valA = a[sortState.key], valB = b[sortState.key];
+        if (['price', 'quantity'].includes(sortState.key)) {
+          valA = Number(valA); valB = Number(valB);
+        }
+        return sortState.asc ? valA > valB ? 1 : -1 : valA < valB ? 1 : -1;
+      });
+
+      filtered.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.dateSold}</td>
+          <td>${item.orderNumber}</td>
+          <td>${item.itemName}</td>
+          <td>${item.quantity}</td>
+          <td>${item.soldBy}</td>
+          <td>${item.platform}</td>
+          <td>${item.customerName}</td>
+          <td>${item.contact}</td>
+          <td>R${parseFloat(item.price).toFixed(2)}</td>
+          <td>${item.paymentMethod}</td>
+          <td>${item.notes}</td>
+          <td><button onclick="deleteSale(${index})">Delete</button></td>`;
+        salesTableBody.appendChild(tr);
+      });
+    }
+
+    function renderRecycleBin() {
+      recycleBinList.innerHTML = recycleBinData.length === 0 ? 'Recycle bin is empty.' : '';
+      recycleBinData.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.innerHTML = `${item.dateSold} - ${item.itemName} - R${item.price.toFixed(2)} `;
+        const restoreBtn = document.createElement('button');
+        restoreBtn.textContent = 'Restore';
+        restoreBtn.onclick = () => restoreSale(index);
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.style.backgroundColor = '#c0392b';
+        deleteBtn.onclick = () => deleteRecycleBinSale(index);
+        div.appendChild(restoreBtn);
+        div.appendChild(deleteBtn);
+        recycleBinList.appendChild(div);
+      });
+    }
+
+    document.getElementById('salesForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const sale = {
+        orderNumber: form.orderNumber.value.trim(),
+        itemName: form.itemName.value.trim(),
+        quantity: Number(form.quantity.value),
+        dateSold: form.dateSold.value,
+        soldBy: form.soldBy.value.trim(),
+        platform: form.platform.value.trim(),
+        customerName: form.customerName.value.trim(),
+        contact: form.contact.value.trim(),
+        price: Number(form.price.value),
+        paymentMethod: form.paymentMethod.value.trim(),
+        notes: form.notes.value.trim()
+      };
+      salesData.push(sale);
+      saveToLocalStorage();
+      loadData();
+      form.reset();
+    });
+
+    function deleteSale(index) {
+      if (!confirm("Are you sure you want to delete this sale?")) return;
+      recycleBinData.push(salesData.splice(index, 1)[0]);
+      saveToLocalStorage();
+      loadData();
+    }
+
+    function restoreSale(index) {
+      salesData.push(recycleBinData.splice(index, 1)[0]);
+      saveToLocalStorage();
+      loadData();
+    }
+
+    function deleteRecycleBinSale(index) {
+      if (confirm("Permanently delete this record?")) {
+        recycleBinData.splice(index, 1);
+        saveToLocalStorage();
+        loadData();
+      }
+    }
+
+    function clearAllData() {
+      if (confirm("Move all sales to recycle bin?")) {
+        recycleBinData = recycleBinData.concat(salesData);
+        salesData = [];
+        saveToLocalStorage();
+        loadData();
+      }
+    }
+
+    function restoreAll() {
+      if (confirm("Restore all from recycle bin?")) {
+        salesData = salesData.concat(recycleBinData);
+        recycleBinData = [];
+        saveToLocalStorage();
+        loadData();
+      }
+    }
+
+    function deleteAllRecycleBin() {
+      if (confirm("Permanently delete all recycle bin items?")) {
+        recycleBinData = [];
+        saveToLocalStorage();
+        loadData();
+      }
+    }
+
+    function calculateTotal() {
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
+      const total = salesData.reduce((sum, item) => {
+        if ((!from || item.dateSold >= from) && (!to || item.dateSold <= to)) {
+          return sum + Number(item.price);
+        }
+        return sum;
+      }, 0);
+      totalDisplay.textContent = `Total Sales (ZAR): R${total.toFixed(2)}`;
+    }
+
+    function downloadExcel() {
+  const fileName = prompt("Enter a file name for the Excel file:", `Sales_Report_${new Date().toISOString().slice(0,10)}`);
+  if (!fileName) return; // user canceled or left blank
+
+  const from = document.getElementById('fromDate').value;
+  const to = document.getElementById('toDate').value;
+
+  const filtered = salesData.filter(item =>
+    (!from || item.dateSold >= from) && (!to || item.dateSold <= to)
+  );
+
+  const worksheet = XLSX.utils.json_to_sheet(filtered);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+}
+    document.querySelectorAll('#salesTable th[data-key]').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.getAttribute('data-key');
+        if (sortState.key === key) sortState.asc = !sortState.asc;
+        else { sortState.key = key; sortState.asc = true; }
+        document.querySelectorAll('#salesTable th[data-key]').forEach(header =>
+          header.textContent = header.textContent.replace(/[\u25B2\u25BC]/g, ''));
+        th.textContent += sortState.asc ? ' ▼' : ' ▲';
+        renderSalesTable();
+      });
+    });
+
+    document.getElementById('fromDate').addEventListener('change', renderSalesTable);
+    document.getElementById('toDate').addEventListener('change', renderSalesTable);
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
