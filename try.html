@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Stock Sales Tracker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+    header img {
+      width: 50px;
+      height: 50px;
+    }
+    h1 {
+      color: #222;
+      font-size: 24px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background-color: #2c3e50;
+      color: #fff;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .form-container, .filter-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .submit-btn, .download-btn {
+      background-color: #2c3e50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .submit-btn:hover, .download-btn:hover {
+      background-color: #34495e;
+    }
+    .responsive-table-wrapper {
+      overflow-x: auto;
+      max-height: 400px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    @media (max-width: 600px) {
+      table {
+        font-size: 14px;
+      }
+      .form-container, .filter-container {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="img/ArtisanSALOGO-removebg-preview.png" alt="Logo">
+    <h1>Demo Stock Sales Tracker</h1>
+  </header>
+
+  <div class="form-container">
+    <form id="salesForm">
+      <label>Order Number: <input type="text" id="orderNumber" required /></label><br />
+      <label>Item Name: <input type="text" id="itemName" required /></label><br />
+      <label>Date Sold: <input type="date" id="dateSold" required /></label><br />
+      <label>Sold By: <input type="text" id="soldBy" required /></label><br />
+      <label>Platform: <input type="text" id="platform" required /></label><br />
+      <label>Customer Name: <input type="text" id="customerName" /></label><br />
+      <label>Contact: <input type="text" id="contact" /></label><br />
+      <label>Price (ZAR): <input type="number" id="price" required /></label><br />
+      <label>Payment Method: <input type="text" id="paymentMethod" /></label><br />
+      <label>Notes: <input type="text" id="notes" /></label><br />
+      <button type="submit" class="submit-btn">Add Entry</button>
+    </form>
+  </div>
+
+  <div class="filter-container">
+    <label>From Date: <input type="date" id="fromDate" /></label>
+    <label>To Date: <input type="date" id="toDate" /></label>
+    <button class="download-btn" onclick="downloadExcel()">Download Excel</button>
+  </div>
+
+  <div class="responsive-table-wrapper">
+    <table id="salesTable">
+      <thead>
+        <tr>
+          <th>Order Number</th>
+          <th>Item Name</th>
+          <th>Date Sold</th>
+          <th>Sold By</th>
+          <th>Platform</th>
+          <th>Customer Name</th>
+          <th>Contact</th>
+          <th>Price (ZAR)</th>
+          <th>Payment Method</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    document.getElementById('salesForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const table = document.querySelector('#salesTable tbody');
+      const row = table.insertRow();
+      const data = [
+        'orderNumber', 'itemName', 'dateSold', 'soldBy', 'platform',
+        'customerName', 'contact', 'price', 'paymentMethod', 'notes'
+      ];
+      data.forEach(id => {
+        const cell = row.insertCell();
+        const value = document.getElementById(id).value;
+        cell.textContent = value;
+        document.getElementById(id).value = '';
+      });
+    });
+
+    function downloadExcel() {
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
+      const rows = Array.from(document.querySelectorAll('#salesTable tbody tr'));
+      const data = [
+        ["Order Number", "Item Name", "Date Sold", "Sold By", "Platform", "Customer Name", "Contact", "Price (ZAR)", "Payment Method", "Notes"]
+      ];
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const date = cells[2].textContent;
+        if ((!from || date >= from) && (!to || date <= to)) {
+          data.push(Array.from(cells).map(cell => cell.textContent));
+        }
+      });
+
+      const reportName = prompt("Enter Sales Report File Name:", "Sales Report");
+      if (!reportName) return;
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, "Sales");
+      XLSX.writeFile(wb, reportName + ".xlsx");
+    }
+  </script>
+</body>
+</html>
